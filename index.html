@@ -7,6 +7,7 @@
   <meta name="description" content="Verifica la autenticidad e integridad de una prueba digital sellada con Proofly.">
   <meta name="theme-color" content="#0D0D0D">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F6E1;</text></svg>">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
       --bg: #0D0D0D;
@@ -49,314 +50,112 @@
     }
 
     /* Header */
-    .header {
-      text-align: center;
-      padding: 40px 0 20px;
-    }
-    .header-icon {
-      font-size: 48px;
-      margin-bottom: 12px;
-    }
-    .header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-    }
-    .header p {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-top: 6px;
-    }
+    .header { text-align: center; padding: 40px 0 20px; }
+    .header-icon { font-size: 48px; margin-bottom: 12px; }
+    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .header p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; }
 
     /* Loading */
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 60px 0;
-    }
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+    .loading { display: flex; flex-direction: column; align-items: center; padding: 60px 0; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading p {
-      color: var(--text-secondary);
-      margin-top: 16px;
-      font-size: 14px;
-    }
+    .loading p { color: var(--text-secondary); margin-top: 16px; font-size: 14px; }
 
     /* Status Badge */
-    .status-badge {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 16px;
-      border-radius: var(--radius);
-      margin-bottom: 20px;
-    }
-    .status-badge.valid {
-      background: var(--success-dim);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-    }
-    .status-badge.invalid {
-      background: var(--error-dim);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-    }
-    .status-badge.expired {
-      background: var(--warning-dim);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-    }
-    .status-icon {
-      font-size: 28px;
-      flex-shrink: 0;
-    }
-    .status-text h2 {
-      font-size: 16px;
-      font-weight: 600;
-    }
+    .status-badge { display: flex; align-items: center; gap: 10px; padding: 16px; border-radius: var(--radius); margin-bottom: 20px; }
+    .status-badge.valid { background: var(--success-dim); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .status-badge.invalid { background: var(--error-dim); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .status-icon { font-size: 28px; flex-shrink: 0; }
+    .status-text h2 { font-size: 16px; font-weight: 600; }
     .status-badge.valid .status-text h2 { color: var(--success); }
-    .status-badge.invalid .status-text h2 { color: var(--error); }
-    .status-badge.expired .status-text h2 { color: var(--warning); }
-    .status-text p {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin-top: 2px;
-    }
+    .status-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
 
-    /* Share Mode Pill */
-    .mode-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      background: var(--accent-dim);
-      color: var(--accent);
-      border: 1px solid rgba(108, 99, 255, 0.2);
-      margin-bottom: 20px;
-    }
+    /* Mode Pill */
+    .mode-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(108, 99, 255, 0.2); margin-bottom: 20px; }
 
     /* Card */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 16px;
-    }
-    .card-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .card-title { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 14px; }
 
-    /* Hash Display */
-    .hash-container {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 14px;
-    }
-    .hash-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-    }
-    .hash-value {
-      font-family: var(--mono);
-      font-size: 12px;
-      color: var(--text);
-      word-break: break-all;
-      line-height: 1.6;
-      user-select: all;
-    }
+    /* Photo Gallery */
+    .photo-gallery { margin-bottom: 16px; }
+    .photo-container { position: relative; width: 100%; border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
+    .photo-container img { width: 100%; height: auto; display: block; max-height: 400px; object-fit: contain; background: #000; }
+    .photo-nav { display: flex; gap: 8px; margin-top: 10px; justify-content: center; }
+    .photo-thumb { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; border: 2px solid var(--border); cursor: pointer; transition: border-color 0.2s; }
+    .photo-thumb.active { border-color: var(--accent); }
+    .photo-counter { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+    .description-text { font-size: 14px; color: var(--text); line-height: 1.5; margin-top: 12px; padding: 12px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+
+    /* Map */
+    .map-container { width: 100%; height: 220px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); margin-bottom: 8px; }
+    .map-coords { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+    /* Hash */
+    .hash-container { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+    .hash-label { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; margin-bottom: 6px; }
+    .hash-value { font-family: var(--mono); font-size: 12px; color: var(--text); word-break: break-all; line-height: 1.6; user-select: all; }
 
     /* Info Rows */
-    .info-grid {
-      display: grid;
-      gap: 0;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .info-grid { display: grid; gap: 0; }
+    .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
     .info-row:last-child { border-bottom: none; }
-    .info-label {
-      font-size: 13px;
-      color: var(--text-secondary);
-      flex-shrink: 0;
-    }
-    .info-value {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      text-align: right;
-      margin-left: 16px;
-    }
-    .info-value.mono {
-      font-family: var(--mono);
-      font-size: 12px;
-    }
+    .info-label { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+    .info-value { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; margin-left: 16px; }
+    .info-value.mono { font-family: var(--mono); font-size: 12px; }
 
-    /* GPS Badge */
-    .gps-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-    }
+    /* Badges */
+    .gps-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
     .gps-badge.accurate { background: var(--success-dim); color: var(--success); }
     .gps-badge.approximate { background: var(--warning-dim); color: var(--warning); }
     .gps-badge.unavailable { background: var(--error-dim); color: var(--error); }
     .gps-badge.private { background: var(--accent-dim); color: var(--accent); }
+    .tag-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: var(--surface-hover); color: var(--text); }
 
-    /* Tag Badge */
-    .tag-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-      background: var(--surface-hover);
-      color: var(--text);
-    }
-
-    /* Existence Only Overlay */
-    .existence-notice {
-      text-align: center;
-      padding: 20px;
-      background: var(--accent-dim);
-      border: 1px dashed rgba(108, 99, 255, 0.3);
-      border-radius: var(--radius-sm);
-      margin-bottom: 14px;
-    }
+    /* Existence Only */
+    .existence-notice { text-align: center; padding: 20px; background: var(--accent-dim); border: 1px dashed rgba(108, 99, 255, 0.3); border-radius: var(--radius-sm); margin-bottom: 14px; }
     .existence-notice .icon { font-size: 32px; margin-bottom: 8px; }
-    .existence-notice h3 {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 4px;
-    }
-    .existence-notice p {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
+    .existence-notice h3 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+    .existence-notice p { font-size: 12px; color: var(--text-secondary); }
 
-    /* Error State */
-    .error-container {
-      text-align: center;
-      padding: 48px 20px;
-    }
-    .error-container .icon { font-size: 48px; margin-bottom: 16px; }
-    .error-container h2 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .error-container p {
-      color: var(--text-secondary);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    /* No Token State */
-    .no-token {
-      text-align: center;
-      padding: 48px 20px;
-    }
-    .no-token .icon { font-size: 56px; margin-bottom: 16px; }
-    .no-token h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    .no-token p {
-      color: var(--text-secondary);
-      font-size: 14px;
-      line-height: 1.5;
-      max-width: 360px;
-      margin: 0 auto;
-    }
+    /* Error / No Token */
+    .error-container, .no-token { text-align: center; padding: 48px 20px; }
+    .error-container .icon, .no-token .icon { font-size: 48px; margin-bottom: 16px; }
+    .error-container h2, .no-token h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .error-container p, .no-token p { color: var(--text-secondary); font-size: 14px; line-height: 1.5; max-width: 360px; margin: 0 auto; }
 
     /* Footer */
-    .footer {
-      text-align: center;
-      padding: 32px 0;
-      margin-top: auto;
-    }
-    .footer p {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-    .footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
+    .footer { text-align: center; padding: 32px 0; margin-top: auto; }
+    .footer p { font-size: 12px; color: var(--text-secondary); }
 
     /* Collapsible */
-    .collapsible-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 13px;
-      cursor: pointer;
-      padding: 10px 0;
-    }
+    .collapsible-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 10px 0; }
     .collapsible-toggle:hover { color: var(--text); }
-    .collapsible-toggle .arrow {
-      transition: transform 0.2s;
-      font-size: 12px;
-    }
+    .collapsible-toggle .arrow { transition: transform 0.2s; font-size: 12px; }
     .collapsible-toggle.open .arrow { transform: rotate(90deg); }
-    .collapsible-content {
-      display: none;
-      padding-top: 8px;
-    }
+    .collapsible-content { display: none; padding-top: 8px; }
     .collapsible-content.open { display: block; }
 
     /* Animation */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade-in {
-      animation: fadeIn 0.4s ease-out forwards;
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
     .fade-in-delay { animation-delay: 0.15s; opacity: 0; }
     .fade-in-delay-2 { animation-delay: 0.3s; opacity: 0; }
+
+    /* Leaflet dark overrides */
+    .leaflet-tile-pane { filter: brightness(0.7) contrast(1.1) saturate(0.8); }
+    .leaflet-control-attribution { background: rgba(0,0,0,0.6) !important; color: #888 !important; font-size: 10px !important; }
+    .leaflet-control-attribution a { color: #aaa !important; }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <!-- Header -->
     <div class="header">
       <div class="header-icon">&#x1F6E1;</div>
       <h1>Proofly</h1>
       <p>Verificacion de Prueba Digital</p>
     </div>
-
-    <!-- Content injected by JS -->
     <div id="app"></div>
   </div>
 
@@ -364,15 +163,16 @@
     <p>Proofly &mdash; Evidencia digital sellada</p>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // =========================================================================
-    // Configuration - Update these values for your Supabase project
+    // Configuration
     // =========================================================================
     const SUPABASE_URL = 'https://ctwvjxwckghhypcdxspq.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0d3ZqeHdja2doaHlwY2R4c3BxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NTgyMzMsImV4cCI6MjA4NzEzNDIzM30.VXg8eQLjybiMdzzmRRIYnPYHNZuUcnyYQA0xa90bFOM';
 
     // =========================================================================
-    // Supabase REST helpers
+    // Helpers
     // =========================================================================
 
     async function supabaseRpc(fnName, params) {
@@ -392,18 +192,9 @@
       return res.json();
     }
 
-    // =========================================================================
-    // Token extraction
-    // =========================================================================
-
     function getToken() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('token') || null;
+      return new URLSearchParams(window.location.search).get('token') || null;
     }
-
-    // =========================================================================
-    // Rendering helpers
-    // =========================================================================
 
     const app = document.getElementById('app');
 
@@ -414,14 +205,12 @@
       personal: { label: 'Personal', icon: '&#x1F464;' },
       other: { label: 'Otro', icon: '&#x1F4CB;' },
     };
-
     const MODE_LABELS = {
       full: { label: 'Acceso completo', icon: '&#x1F4E6;' },
       no_location: { label: 'Sin ubicacion', icon: '&#x1F6E1;' },
       existence_only: { label: 'Solo existencia', icon: '&#x1F441;' },
       temporal: { label: 'Temporal', icon: '&#x1F552;' },
     };
-
     const GPS_LABELS = {
       accurate: { label: 'Preciso', css: 'accurate' },
       approximate: { label: 'Aproximado', css: 'approximate' },
@@ -431,60 +220,31 @@
 
     function formatDate(iso) {
       if (!iso) return '-';
-      const d = new Date(iso);
-      return d.toLocaleString('es-MX', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        timeZoneName: 'short',
-      });
+      return new Date(iso).toLocaleString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' });
     }
-
     function formatDateShort(iso) {
       if (!iso) return '-';
-      const d = new Date(iso);
-      return d.toLocaleDateString('es-MX', {
-        year: 'numeric', month: 'short', day: 'numeric',
-      });
+      return new Date(iso).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' });
     }
-
-    // =========================================================================
-    // Render States
-    // =========================================================================
-
-    function renderLoading() {
-      app.innerHTML = `
-        <div class="loading">
-          <div class="spinner"></div>
-          <p>Verificando prueba...</p>
-        </div>
-      `;
-    }
-
-    function renderNoToken() {
-      app.innerHTML = `
-        <div class="no-token fade-in">
-          <div class="icon">&#x1F50D;</div>
-          <h2>No se proporcion&oacute; un token</h2>
-          <p>Este enlace no contiene un token de verificaci&oacute;n v&aacute;lido. Aseg&uacute;rate de usar el enlace completo compartido desde la app de Proofly.</p>
-        </div>
-      `;
-    }
-
-    function renderError(message) {
-      const isExpired = message.toLowerCase().includes('expir');
-      app.innerHTML = `
-        <div class="error-container fade-in">
-          <div class="icon">${isExpired ? '&#x23F0;' : '&#x26A0;'}</div>
-          <h2>${isExpired ? 'Enlace expirado' : 'No se pudo verificar'}</h2>
-          <p>${escapeHtml(message)}</p>
-        </div>
-      `;
-    }
-
     function escapeHtml(str) {
       const el = document.createElement('span');
       el.textContent = str;
       return el.innerHTML;
+    }
+
+    // =========================================================================
+    // Render
+    // =========================================================================
+
+    function renderLoading() {
+      app.innerHTML = '<div class="loading"><div class="spinner"></div><p>Verificando prueba...</p></div>';
+    }
+    function renderNoToken() {
+      app.innerHTML = '<div class="no-token fade-in"><div class="icon">&#x1F50D;</div><h2>No se proporcion&oacute; un token</h2><p>Este enlace no contiene un token de verificaci&oacute;n v&aacute;lido. Usa el enlace completo compartido desde la app de Proofly.</p></div>';
+    }
+    function renderError(message) {
+      const isExpired = message.toLowerCase().includes('expir');
+      app.innerHTML = `<div class="error-container fade-in"><div class="icon">${isExpired ? '&#x23F0;' : '&#x26A0;'}</div><h2>${isExpired ? 'Enlace expirado' : 'No se pudo verificar'}</h2><p>${escapeHtml(message)}</p></div>`;
     }
 
     function renderResult(data) {
@@ -493,9 +253,10 @@
       const tag = TAG_LABELS[proof.tag] || TAG_LABELS.other;
       const gps = GPS_LABELS[proof.gps_status] || GPS_LABELS.unavailable;
       const isExistenceOnly = share.mode === 'existence_only';
+      const hasPhotos = !isExistenceOnly && proof.photos && proof.photos.length > 0 && proof.photos[0].url;
+      const hasGps = proof.gps && proof.gps.latitude && proof.gps.longitude;
 
       let html = `
-        <!-- Status Badge -->
         <div class="status-badge valid fade-in">
           <div class="status-icon">&#x2705;</div>
           <div class="status-text">
@@ -503,142 +264,152 @@
             <p>Integridad confirmada &mdash; sellada el ${formatDateShort(proof.timestamp_utc)}</p>
           </div>
         </div>
-
-        <!-- Share Mode -->
-        <div class="mode-pill fade-in">
-          <span>${mode.icon}</span>
-          <span>${mode.label}</span>
-        </div>
+        <div class="mode-pill fade-in"><span>${mode.icon}</span><span>${mode.label}</span></div>
       `;
 
       // Existence only notice
       if (isExistenceOnly) {
-        html += `
-          <div class="card fade-in fade-in-delay">
-            <div class="existence-notice">
-              <div class="icon">&#x1F441;</div>
-              <h3>Solo verificaci&oacute;n de existencia</h3>
-              <p>El contenido est&aacute; oculto. Solo se confirma que la prueba fue creada y sellada en la fecha indicada.</p>
-            </div>
-          </div>
-        `;
+        html += `<div class="card fade-in fade-in-delay"><div class="existence-notice"><div class="icon">&#x1F441;</div><h3>Solo verificaci&oacute;n de existencia</h3><p>El contenido est&aacute; oculto. Solo se confirma que la prueba fue creada y sellada en la fecha indicada.</p></div></div>`;
       }
 
-      // Hash Card
-      html += `
-        <div class="card fade-in fade-in-delay">
-          <div class="card-title">Integridad criptogr&aacute;fica</div>
-          <div class="hash-container">
-            <div class="hash-label">SHA-256</div>
-            <div class="hash-value">${escapeHtml(proof.evidence_hash)}</div>
-          </div>
+      // Photos
+      if (hasPhotos) {
+        const photos = proof.photos.filter(p => p.url);
+        html += `<div class="card fade-in fade-in-delay photo-gallery">
+          <div class="card-title">Evidencia fotogr&aacute;fica</div>
+          <div class="photo-container">
+            <img id="main-photo" src="${escapeHtml(photos[0].url)}" alt="Evidencia fotografica" />
+            ${photos.length > 1 ? `<span class="photo-counter">1 / ${photos.length}</span>` : ''}
+          </div>`;
+        if (photos.length > 1) {
+          html += '<div class="photo-nav">';
+          photos.forEach((p, i) => {
+            html += `<img class="photo-thumb ${i === 0 ? 'active' : ''}" src="${escapeHtml(p.url)}" onclick="selectPhoto(${i})" alt="Foto ${i + 1}" />`;
+          });
+          html += '</div>';
+        }
+        if (proof.description) {
+          html += `<div class="description-text">${escapeHtml(proof.description)}</div>`;
+        }
+        html += '</div>';
+      } else if (!isExistenceOnly && proof.description) {
+        html += `<div class="card fade-in fade-in-delay">
+          <div class="card-title">Descripci&oacute;n</div>
+          <div class="description-text">${escapeHtml(proof.description)}</div>
+        </div>`;
+      }
+
+      // Map
+      if (hasGps) {
+        html += `<div class="card fade-in fade-in-delay">
+          <div class="card-title">Ubicaci&oacute;n de captura</div>
+          <div id="map" class="map-container"></div>
+          <div class="map-coords">${proof.gps.latitude.toFixed(6)}, ${proof.gps.longitude.toFixed(6)}${proof.gps.accuracy ? ' &mdash; precisi&oacute;n: ' + Math.round(proof.gps.accuracy) + 'm' : ''}</div>
+        </div>`;
+      }
+
+      // Hash
+      html += `<div class="card fade-in fade-in-delay-2">
+        <div class="card-title">Integridad criptogr&aacute;fica</div>
+        <div class="hash-container">
+          <div class="hash-label">SHA-256</div>
+          <div class="hash-value">${escapeHtml(proof.evidence_hash)}</div>
         </div>
-      `;
+      </div>`;
 
-      // Details Card (skip some fields for existence_only)
-      html += `
-        <div class="card fade-in fade-in-delay-2">
-          <div class="card-title">Detalles de la prueba</div>
-          <div class="info-grid">
-            <div class="info-row">
-              <span class="info-label">Fecha de sellado</span>
-              <span class="info-value">${formatDate(proof.timestamp_utc)}</span>
-            </div>
-      `;
-
+      // Details
+      html += `<div class="card fade-in fade-in-delay-2">
+        <div class="card-title">Detalles de la prueba</div>
+        <div class="info-grid">
+          <div class="info-row"><span class="info-label">Fecha de sellado</span><span class="info-value">${formatDate(proof.timestamp_utc)}</span></div>`;
       if (!isExistenceOnly) {
         html += `
-            <div class="info-row">
-              <span class="info-label">Categor&iacute;a</span>
-              <span class="info-value"><span class="tag-badge">${tag.icon} ${tag.label}</span></span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Fotos</span>
-              <span class="info-value">${proof.photo_count}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">GPS</span>
-              <span class="info-value"><span class="gps-badge ${gps.css}">${gps.label}</span></span>
-            </div>
-        `;
+          <div class="info-row"><span class="info-label">Categor&iacute;a</span><span class="info-value"><span class="tag-badge">${tag.icon} ${tag.label}</span></span></div>
+          <div class="info-row"><span class="info-label">Fotos</span><span class="info-value">${proof.photo_count}</span></div>
+          <div class="info-row"><span class="info-label">GPS</span><span class="info-value"><span class="gps-badge ${gps.css}">${gps.label}</span></span></div>`;
       }
+      html += `<div class="info-row"><span class="info-label">Estado</span><span class="info-value"><span class="gps-badge accurate">&#x1F512; Sellado</span></span></div>
+        </div></div>`;
 
-      html += `
-            <div class="info-row">
-              <span class="info-label">Estado</span>
-              <span class="info-value"><span class="gps-badge accurate">&#x1F512; Sellado</span></span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Technical Details (collapsible)
-      html += `
-        <div class="card fade-in fade-in-delay-2">
-          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
-            <span>Detalles t&eacute;cnicos</span>
-            <span class="arrow">&#x25B6;</span>
-          </button>
-          <div class="collapsible-content">
-            <div class="info-grid">
-              <div class="info-row">
-                <span class="info-label">Algoritmo</span>
-                <span class="info-value mono">SHA-256 + AES-256-CBC</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Dispositivo</span>
-                <span class="info-value">${escapeHtml(proof.device_model || '-')}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Versi&oacute;n app</span>
-                <span class="info-value mono">${escapeHtml(proof.app_version || '-')}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Modo de acceso</span>
-                <span class="info-value">${mode.label}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Expira</span>
-                <span class="info-value">${share.expires_at ? formatDate(share.expires_at) : 'Nunca'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Accesos</span>
-                <span class="info-value">${share.access_count}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Compartido el</span>
-                <span class="info-value">${formatDateShort(share.created_at)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+      // Technical details
+      html += `<div class="card fade-in fade-in-delay-2">
+        <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+          <span>Detalles t&eacute;cnicos</span><span class="arrow">&#x25B6;</span>
+        </button>
+        <div class="collapsible-content"><div class="info-grid">
+          <div class="info-row"><span class="info-label">Algoritmo</span><span class="info-value mono">SHA-256 + AES-256-CBC</span></div>
+          <div class="info-row"><span class="info-label">Dispositivo</span><span class="info-value">${escapeHtml(proof.device_model || '-')}</span></div>
+          <div class="info-row"><span class="info-label">Versi&oacute;n app</span><span class="info-value mono">${escapeHtml(proof.app_version || '-')}</span></div>
+          <div class="info-row"><span class="info-label">Modo de acceso</span><span class="info-value">${mode.label}</span></div>
+          <div class="info-row"><span class="info-label">Expira</span><span class="info-value">${share.expires_at ? formatDate(share.expires_at) : 'Nunca'}</span></div>
+          <div class="info-row"><span class="info-label">Accesos</span><span class="info-value">${share.access_count}</span></div>
+          <div class="info-row"><span class="info-label">Compartido el</span><span class="info-value">${formatDateShort(share.created_at)}</span></div>
+        </div></div>
+      </div>`;
 
       // How it works
-      html += `
-        <div class="card fade-in fade-in-delay-2">
-          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
-            <span>&#x2139; &iquest;C&oacute;mo funciona?</span>
-            <span class="arrow">&#x25B6;</span>
-          </button>
-          <div class="collapsible-content">
-            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
-              Proofly sella evidencia digital en el dispositivo del usuario usando SHA-256 para integridad y AES-256 para encripci&oacute;n.
-              El servidor nunca ve el contenido sin cifrar &mdash; solo almacena hashes y blobs encriptados.
-              Cada enlace compartido tiene su propia clave derivada y puede ser revocado independientemente.
-              La marca de tiempo es provista por el servidor para prevenir manipulaci&oacute;n de reloj.
-            </p>
-          </div>
+      html += `<div class="card fade-in fade-in-delay-2">
+        <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+          <span>&#x2139; &iquest;C&oacute;mo funciona?</span><span class="arrow">&#x25B6;</span>
+        </button>
+        <div class="collapsible-content">
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+            Proofly sella evidencia digital en el dispositivo del usuario usando SHA-256 para integridad y AES-256 para encripci&oacute;n.
+            Cada enlace compartido tiene su propia clave derivada y puede ser revocado independientemente.
+            La marca de tiempo es provista por el servidor para prevenir manipulaci&oacute;n de reloj.
+          </p>
         </div>
-      `;
+      </div>`;
 
       app.innerHTML = html;
+
+      // Store photos reference for gallery navigation
+      if (hasPhotos) {
+        window._photos = proof.photos.filter(p => p.url);
+      }
+
+      // Init map after DOM is ready
+      if (hasGps) {
+        setTimeout(() => initMap(proof.gps.latitude, proof.gps.longitude, proof.gps.accuracy), 100);
+      }
+    }
+
+    // =========================================================================
+    // Photo Gallery
+    // =========================================================================
+
+    function selectPhoto(index) {
+      const photos = window._photos;
+      if (!photos || !photos[index]) return;
+      document.getElementById('main-photo').src = photos[index].url;
+      document.querySelectorAll('.photo-thumb').forEach((t, i) => {
+        t.classList.toggle('active', i === index);
+      });
+      const counter = document.querySelector('.photo-counter');
+      if (counter) counter.textContent = `${index + 1} / ${photos.length}`;
+    }
+
+    // =========================================================================
+    // Map
+    // =========================================================================
+
+    function initMap(lat, lng, accuracy) {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+      const map = L.map(mapEl, { zoomControl: false, attributionControl: true }).setView([lat, lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(map);
+      L.marker([lat, lng]).addTo(map);
+      if (accuracy) {
+        L.circle([lat, lng], { radius: accuracy, color: '#6C63FF', fillColor: '#6C63FF', fillOpacity: 0.12, weight: 1 }).addTo(map);
+      }
     }
 
     function toggleCollapsible(btn) {
       btn.classList.toggle('open');
-      const content = btn.nextElementSibling;
-      content.classList.toggle('open');
+      btn.nextElementSibling.classList.toggle('open');
     }
 
     // =========================================================================
@@ -647,27 +418,12 @@
 
     async function main() {
       const token = getToken();
-
-      if (!token) {
-        renderNoToken();
-        return;
-      }
-
+      if (!token) { renderNoToken(); return; }
       renderLoading();
-
       try {
         const result = await supabaseRpc('verify_share', { p_token: token });
-
-        if (result && result.error) {
-          renderError(result.error);
-          return;
-        }
-
-        if (!result || !result.share || !result.proof) {
-          renderError('Respuesta inesperada del servidor.');
-          return;
-        }
-
+        if (result && result.error) { renderError(result.error); return; }
+        if (!result || !result.share || !result.proof) { renderError('Respuesta inesperada del servidor.'); return; }
         renderResult(result);
       } catch (err) {
         renderError(err.message || 'Error de conexion. Intenta de nuevo.');
