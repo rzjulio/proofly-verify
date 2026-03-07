@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proofly - Verificar Prueba</title>
+  <meta name="description" content="Verifica la autenticidad e integridad de una prueba digital sellada con Proofly.">
+  <meta name="theme-color" content="#0D0D0D">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F6E1;</text></svg>">
+  <style>
+    :root {
+      --bg: #0D0D0D;
+      --surface: #1A1A1A;
+      --surface-hover: #242424;
+      --border: #2A2A2A;
+      --text: #F5F5F5;
+      --text-secondary: #999;
+      --accent: #6C63FF;
+      --accent-dim: rgba(108, 99, 255, 0.15);
+      --success: #10B981;
+      --success-dim: rgba(16, 185, 129, 0.12);
+      --error: #EF4444;
+      --error-dim: rgba(239, 68, 68, 0.12);
+      --warning: #F59E0B;
+      --warning-dim: rgba(245, 158, 11, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      padding: 20px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 0 20px;
+    }
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* Loading */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 0;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading p {
+      color: var(--text-secondary);
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+    .status-badge.valid {
+      background: var(--success-dim);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .status-badge.invalid {
+      background: var(--error-dim);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .status-badge.expired {
+      background: var(--warning-dim);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .status-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+    .status-text h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .status-badge.valid .status-text h2 { color: var(--success); }
+    .status-badge.invalid .status-text h2 { color: var(--error); }
+    .status-badge.expired .status-text h2 { color: var(--warning); }
+    .status-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Share Mode Pill */
+    .mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(108, 99, 255, 0.2);
+      margin-bottom: 20px;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* Hash Display */
+    .hash-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+    }
+    .hash-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .hash-value {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.6;
+      user-select: all;
+    }
+
+    /* Info Rows */
+    .info-grid {
+      display: grid;
+      gap: 0;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+    .info-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      text-align: right;
+      margin-left: 16px;
+    }
+    .info-value.mono {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    /* GPS Badge */
+    .gps-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .gps-badge.accurate { background: var(--success-dim); color: var(--success); }
+    .gps-badge.approximate { background: var(--warning-dim); color: var(--warning); }
+    .gps-badge.unavailable { background: var(--error-dim); color: var(--error); }
+    .gps-badge.private { background: var(--accent-dim); color: var(--accent); }
+
+    /* Tag Badge */
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    /* Existence Only Overlay */
+    .existence-notice {
+      text-align: center;
+      padding: 20px;
+      background: var(--accent-dim);
+      border: 1px dashed rgba(108, 99, 255, 0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+    }
+    .existence-notice .icon { font-size: 32px; margin-bottom: 8px; }
+    .existence-notice h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .existence-notice p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Error State */
+    .error-container {
+      text-align: center;
+      padding: 48px 20px;
+    }
+    .error-container .icon { font-size: 48px; margin-bottom: 16px; }
+    .error-container h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .error-container p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* No Token State */
+    .no-token {
+      text-align: center;
+      padding: 48px 20px;
+    }
+    .no-token .icon { font-size: 56px; margin-bottom: 16px; }
+    .no-token h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .no-token p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      margin-top: auto;
+    }
+    .footer p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Collapsible */
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 10px 0;
+    }
+    .collapsible-toggle:hover { color: var(--text); }
+    .collapsible-toggle .arrow {
+      transition: transform 0.2s;
+      font-size: 12px;
+    }
+    .collapsible-toggle.open .arrow { transform: rotate(90deg); }
+    .collapsible-content {
+      display: none;
+      padding-top: 8px;
+    }
+    .collapsible-content.open { display: block; }
+
+    /* Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    .fade-in-delay { animation-delay: 0.15s; opacity: 0; }
+    .fade-in-delay-2 { animation-delay: 0.3s; opacity: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-icon">&#x1F6E1;</div>
+      <h1>Proofly</h1>
+      <p>Verificacion de Prueba Digital</p>
+    </div>
+
+    <!-- Content injected by JS -->
+    <div id="app"></div>
+  </div>
+
+  <div class="footer">
+    <p>Proofly &mdash; Evidencia digital sellada</p>
+  </div>
+
+  <script>
+    // =========================================================================
+    // Configuration - Update these values for your Supabase project
+    // =========================================================================
+    const SUPABASE_URL = 'https://ctwvjxwckghhypcdxspq.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_F5MxrVJ99sirBFhC2z4Fcg_l9O5iGId';
+
+    // =========================================================================
+    // Supabase REST helpers
+    // =========================================================================
+
+    async function supabaseRpc(fnName, params) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Error ${res.status}`);
+      }
+      return res.json();
+    }
+
+    // =========================================================================
+    // Token extraction
+    // =========================================================================
+
+    function getToken() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('token') || null;
+    }
+
+    // =========================================================================
+    // Rendering helpers
+    // =========================================================================
+
+    const app = document.getElementById('app');
+
+    const TAG_LABELS = {
+      property: { label: 'Propiedad', icon: '&#x1F3E0;' },
+      vehicle: { label: 'Vehiculo', icon: '&#x1F697;' },
+      delivery: { label: 'Entrega', icon: '&#x1F4E6;' },
+      personal: { label: 'Personal', icon: '&#x1F464;' },
+      other: { label: 'Otro', icon: '&#x1F4CB;' },
+    };
+
+    const MODE_LABELS = {
+      full: { label: 'Acceso completo', icon: '&#x1F4E6;' },
+      no_location: { label: 'Sin ubicacion', icon: '&#x1F6E1;' },
+      existence_only: { label: 'Solo existencia', icon: '&#x1F441;' },
+      temporal: { label: 'Temporal', icon: '&#x1F552;' },
+    };
+
+    const GPS_LABELS = {
+      accurate: { label: 'Preciso', css: 'accurate' },
+      approximate: { label: 'Aproximado', css: 'approximate' },
+      unavailable: { label: 'No disponible', css: 'unavailable' },
+      private: { label: 'Privado', css: 'private' },
+    };
+
+    function formatDate(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return d.toLocaleString('es-MX', {
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        timeZoneName: 'short',
+      });
+    }
+
+    function formatDateShort(iso) {
+      if (!iso) return '-';
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-MX', {
+        year: 'numeric', month: 'short', day: 'numeric',
+      });
+    }
+
+    // =========================================================================
+    // Render States
+    // =========================================================================
+
+    function renderLoading() {
+      app.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Verificando prueba...</p>
+        </div>
+      `;
+    }
+
+    function renderNoToken() {
+      app.innerHTML = `
+        <div class="no-token fade-in">
+          <div class="icon">&#x1F50D;</div>
+          <h2>No se proporcion&oacute; un token</h2>
+          <p>Este enlace no contiene un token de verificaci&oacute;n v&aacute;lido. Aseg&uacute;rate de usar el enlace completo compartido desde la app de Proofly.</p>
+        </div>
+      `;
+    }
+
+    function renderError(message) {
+      const isExpired = message.toLowerCase().includes('expir');
+      app.innerHTML = `
+        <div class="error-container fade-in">
+          <div class="icon">${isExpired ? '&#x23F0;' : '&#x26A0;'}</div>
+          <h2>${isExpired ? 'Enlace expirado' : 'No se pudo verificar'}</h2>
+          <p>${escapeHtml(message)}</p>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      const el = document.createElement('span');
+      el.textContent = str;
+      return el.innerHTML;
+    }
+
+    function renderResult(data) {
+      const { share, proof } = data;
+      const mode = MODE_LABELS[share.mode] || MODE_LABELS.full;
+      const tag = TAG_LABELS[proof.tag] || TAG_LABELS.other;
+      const gps = GPS_LABELS[proof.gps_status] || GPS_LABELS.unavailable;
+      const isExistenceOnly = share.mode === 'existence_only';
+
+      let html = `
+        <!-- Status Badge -->
+        <div class="status-badge valid fade-in">
+          <div class="status-icon">&#x2705;</div>
+          <div class="status-text">
+            <h2>Prueba verificada</h2>
+            <p>Integridad confirmada &mdash; sellada el ${formatDateShort(proof.timestamp_utc)}</p>
+          </div>
+        </div>
+
+        <!-- Share Mode -->
+        <div class="mode-pill fade-in">
+          <span>${mode.icon}</span>
+          <span>${mode.label}</span>
+        </div>
+      `;
+
+      // Existence only notice
+      if (isExistenceOnly) {
+        html += `
+          <div class="card fade-in fade-in-delay">
+            <div class="existence-notice">
+              <div class="icon">&#x1F441;</div>
+              <h3>Solo verificaci&oacute;n de existencia</h3>
+              <p>El contenido est&aacute; oculto. Solo se confirma que la prueba fue creada y sellada en la fecha indicada.</p>
+            </div>
+          </div>
+        `;
+      }
+
+      // Hash Card
+      html += `
+        <div class="card fade-in fade-in-delay">
+          <div class="card-title">Integridad criptogr&aacute;fica</div>
+          <div class="hash-container">
+            <div class="hash-label">SHA-256</div>
+            <div class="hash-value">${escapeHtml(proof.evidence_hash)}</div>
+          </div>
+        </div>
+      `;
+
+      // Details Card (skip some fields for existence_only)
+      html += `
+        <div class="card fade-in fade-in-delay-2">
+          <div class="card-title">Detalles de la prueba</div>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Fecha de sellado</span>
+              <span class="info-value">${formatDate(proof.timestamp_utc)}</span>
+            </div>
+      `;
+
+      if (!isExistenceOnly) {
+        html += `
+            <div class="info-row">
+              <span class="info-label">Categor&iacute;a</span>
+              <span class="info-value"><span class="tag-badge">${tag.icon} ${tag.label}</span></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Fotos</span>
+              <span class="info-value">${proof.photo_count}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">GPS</span>
+              <span class="info-value"><span class="gps-badge ${gps.css}">${gps.label}</span></span>
+            </div>
+        `;
+      }
+
+      html += `
+            <div class="info-row">
+              <span class="info-label">Estado</span>
+              <span class="info-value"><span class="gps-badge accurate">&#x1F512; Sellado</span></span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Technical Details (collapsible)
+      html += `
+        <div class="card fade-in fade-in-delay-2">
+          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+            <span>Detalles t&eacute;cnicos</span>
+            <span class="arrow">&#x25B6;</span>
+          </button>
+          <div class="collapsible-content">
+            <div class="info-grid">
+              <div class="info-row">
+                <span class="info-label">Algoritmo</span>
+                <span class="info-value mono">SHA-256 + AES-256-CBC</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Dispositivo</span>
+                <span class="info-value">${escapeHtml(proof.device_model || '-')}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Versi&oacute;n app</span>
+                <span class="info-value mono">${escapeHtml(proof.app_version || '-')}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Modo de acceso</span>
+                <span class="info-value">${mode.label}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Expira</span>
+                <span class="info-value">${share.expires_at ? formatDate(share.expires_at) : 'Nunca'}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Accesos</span>
+                <span class="info-value">${share.access_count}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Compartido el</span>
+                <span class="info-value">${formatDateShort(share.created_at)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // How it works
+      html += `
+        <div class="card fade-in fade-in-delay-2">
+          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+            <span>&#x2139; &iquest;C&oacute;mo funciona?</span>
+            <span class="arrow">&#x25B6;</span>
+          </button>
+          <div class="collapsible-content">
+            <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+              Proofly sella evidencia digital en el dispositivo del usuario usando SHA-256 para integridad y AES-256 para encripci&oacute;n.
+              El servidor nunca ve el contenido sin cifrar &mdash; solo almacena hashes y blobs encriptados.
+              Cada enlace compartido tiene su propia clave derivada y puede ser revocado independientemente.
+              La marca de tiempo es provista por el servidor para prevenir manipulaci&oacute;n de reloj.
+            </p>
+          </div>
+        </div>
+      `;
+
+      app.innerHTML = html;
+    }
+
+    function toggleCollapsible(btn) {
+      btn.classList.toggle('open');
+      const content = btn.nextElementSibling;
+      content.classList.toggle('open');
+    }
+
+    // =========================================================================
+    // Main
+    // =========================================================================
+
+    async function main() {
+      const token = getToken();
+
+      if (!token) {
+        renderNoToken();
+        return;
+      }
+
+      renderLoading();
+
+      try {
+        const result = await supabaseRpc('verify_share', { p_token: token });
+
+        if (result && result.error) {
+          renderError(result.error);
+          return;
+        }
+
+        if (!result || !result.share || !result.proof) {
+          renderError('Respuesta inesperada del servidor.');
+          return;
+        }
+
+        renderResult(result);
+      } catch (err) {
+        renderError(err.message || 'Error de conexion. Intenta de nuevo.');
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
