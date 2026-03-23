@@ -146,6 +146,97 @@
     .leaflet-tile-pane { filter: brightness(0.7) contrast(1.1) saturate(0.8); }
     .leaflet-control-attribution { background: rgba(0,0,0,0.6) !important; color: #888 !important; font-size: 10px !important; }
     .leaflet-control-attribution a { color: #aaa !important; }
+
+    /* Drag & Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 16px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
+    .drop-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .drop-zone p { font-size: 13px; color: var(--text-secondary); }
+
+    /* Share Key Input */
+    .key-input-container { margin-bottom: 20px; }
+    .key-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .key-input:focus { border-color: var(--accent); }
+    .key-input::placeholder { color: var(--text-secondary); }
+
+    /* Verify Button */
+    .verify-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-bottom: 20px;
+    }
+    .verify-btn:hover { opacity: 0.9; }
+    .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* File Info */
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 16px;
+    }
+    .file-info .file-icon { font-size: 20px; }
+    .file-info .file-name { font-size: 13px; font-weight: 500; flex: 1; }
+    .file-info .file-size { font-size: 12px; color: var(--text-secondary); }
+    .file-info .file-remove { cursor: pointer; color: var(--error); font-size: 18px; line-height: 1; }
+
+    /* Media Verification */
+    .media-check { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .media-check:last-child { border-bottom: none; }
+    .media-check .check-icon { font-size: 16px; flex-shrink: 0; }
+    .media-check .check-label { font-size: 13px; flex: 1; }
+    .media-check .check-status { font-size: 12px; font-weight: 600; }
+    .media-check .check-status.pass { color: var(--success); }
+    .media-check .check-status.fail { color: var(--error); }
+    .media-check .check-status.pending { color: var(--text-secondary); }
+
+    /* Additional Verify Button */
+    .verify-extra-btn {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .verify-extra-btn:hover { border-color: var(--accent); }
   </style>
 </head>
 <body>
@@ -164,6 +255,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script>
     // =========================================================================
     // Configuration
@@ -194,6 +286,30 @@
 
     function getToken() {
       return new URLSearchParams(window.location.search).get('token') || null;
+    }
+
+    function getShareKeyFromFragment() {
+      const hash = window.location.hash;
+      if (!hash) return null;
+      const match = hash.match(/key=([a-fA-F0-9]+)/);
+      return match ? match[1] : null;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function sha256Hex(data) {
+      let buffer;
+      if (typeof data === 'string') {
+        buffer = new TextEncoder().encode(data);
+      } else {
+        buffer = data;
+      }
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     const app = document.getElementById('app');
@@ -413,21 +529,358 @@
     }
 
     // =========================================================================
-    // Main
+    // File-based .proofly verification (new flow)
+    // =========================================================================
+
+    let selectedFile = null;
+
+    function renderFileMode(shareKey) {
+      let html = `
+        <div class="fade-in">
+          <div id="drop-zone" class="drop-zone" onclick="document.getElementById('file-input').click()">
+            <div class="icon">&#x1F4C2;</div>
+            <h3>Arrastra un archivo .proofly aqu&iacute;</h3>
+            <p>o haz clic para seleccionar</p>
+          </div>
+          <input type="file" id="file-input" accept=".proofly" style="display:none" />
+          <div id="file-info-container"></div>
+          <div class="key-input-container">
+            <input type="text" class="key-input" id="key-input" value="${shareKey ? escapeHtml(shareKey) : ''}" placeholder="Pega la clave de acceso (hex o enlace proofly://)..." />
+          </div>
+          <button class="verify-btn" id="verify-btn" disabled onclick="handleVerifyFile()">Verificar archivo</button>
+          <div id="verify-result"></div>
+        </div>
+      `;
+      app.innerHTML = html;
+
+      const dropZone = document.getElementById('drop-zone');
+      const fileInput = document.getElementById('file-input');
+      const keyInput = document.getElementById('key-input');
+
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+      dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileSelected(file);
+      });
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleFileSelected(file);
+      });
+      keyInput.addEventListener('input', updateVerifyButton);
+    }
+
+    function handleFileSelected(file) {
+      if (!file.name.endsWith('.proofly')) {
+        alert('Por favor selecciona un archivo .proofly');
+        return;
+      }
+      selectedFile = file;
+      document.getElementById('file-info-container').innerHTML = `
+        <div class="file-info">
+          <span class="file-icon">&#x1F4C4;</span>
+          <span class="file-name">${escapeHtml(file.name)}</span>
+          <span class="file-size">${formatBytes(file.size)}</span>
+          <span class="file-remove" onclick="removeFile()">&times;</span>
+        </div>
+      `;
+      updateVerifyButton();
+    }
+
+    function removeFile() {
+      selectedFile = null;
+      document.getElementById('file-info-container').innerHTML = '';
+      document.getElementById('verify-result').innerHTML = '';
+      updateVerifyButton();
+    }
+
+    function updateVerifyButton() {
+      const btn = document.getElementById('verify-btn');
+      const keyInput = document.getElementById('key-input');
+      if (btn && keyInput) {
+        btn.disabled = !selectedFile || !keyInput.value.trim();
+      }
+    }
+
+    async function handleVerifyFile() {
+      if (!selectedFile) return;
+
+      const keyInput = document.getElementById('key-input');
+      const shareKeyRaw = keyInput.value.trim();
+
+      // Extract hex key from deep link format if pasted (proofly://open?key=hex or #key=hex)
+      let key = shareKeyRaw;
+      const keyMatch = shareKeyRaw.match(/key=([a-fA-F0-9]+)/);
+      if (keyMatch) key = keyMatch[1];
+
+      if (!key) { alert('Ingresa la clave de acceso'); return; }
+
+      const resultDiv = document.getElementById('verify-result');
+      resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analizando archivo...</p></div>';
+
+      try {
+        // 1. Read file as ArrayBuffer
+        const arrayBuffer = await selectedFile.arrayBuffer();
+
+        // 2. Parse ZIP with JSZip
+        const zip = await JSZip.loadAsync(arrayBuffer);
+
+        // 3. Extract manifest.json
+        const manifestFile = zip.file('manifest.json');
+        if (!manifestFile) throw new Error('Archivo .proofly inv\u00e1lido: no contiene manifest.json');
+
+        const manifestJson = await manifestFile.async('string');
+        const manifest = JSON.parse(manifestJson);
+
+        if (manifest.version !== '1.0') throw new Error('Versi\u00f3n de .proofly no soportada: ' + manifest.version);
+
+        // 4. Verify evidence hash (SHA-256 over sorted canonical JSON)
+        const hashable = {
+          createdAt: manifest.createdAt,
+          description: manifest.description,
+          device: manifest.device,
+          gpsCentroid: manifest.gpsCentroid,
+          gpsRadius: manifest.gpsRadius,
+          media: manifest.media,
+          proofId: manifest.proofId,
+          sealedAt: manifest.sealedAt,
+          tag: manifest.tag,
+          version: manifest.version,
+        };
+
+        function sortedStringify(obj) {
+          if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+          if (Array.isArray(obj)) return '[' + obj.map(sortedStringify).join(',') + ']';
+          const keys = Object.keys(obj).sort();
+          return '{' + keys.map(k => JSON.stringify(k) + ':' + sortedStringify(obj[k])).join(',') + '}';
+        }
+
+        const canonical = sortedStringify(hashable);
+        const computedHash = 'sha256:' + await sha256Hex(canonical);
+        const manifestValid = computedHash === manifest.evidenceHash;
+
+        // 5. Verify each embedded media file hash
+        const mediaResults = [];
+        for (const entry of manifest.media) {
+          if (entry.embedded) {
+            const zipFileName = 'media/' + entry.id + '.enc';
+            const mediaFile = zip.file(zipFileName);
+            if (mediaFile) {
+              const mediaData = await mediaFile.async('uint8array');
+              const mediaHash = 'sha256:' + await sha256Hex(mediaData);
+              mediaResults.push({
+                id: entry.id, type: entry.type,
+                expected: entry.hash, actual: mediaHash,
+                status: mediaHash === entry.hash ? 'pass' : 'fail',
+              });
+            } else {
+              mediaResults.push({ id: entry.id, type: entry.type, expected: entry.hash, actual: null, status: 'missing' });
+            }
+          } else {
+            mediaResults.push({ id: entry.id, type: entry.type, expected: entry.hash, actual: null, status: 'not-embedded' });
+          }
+        }
+
+        // 6. Render result
+        renderFileVerificationResult(manifest, manifestValid, mediaResults);
+
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="error-container fade-in"><div class="icon">&#x26A0;</div><h2>Error de verificaci&oacute;n</h2><p>${escapeHtml(err.message)}</p></div>`;
+      }
+    }
+
+    function renderFileVerificationResult(manifest, manifestValid, mediaResults) {
+      const allEmbeddedOk = mediaResults.filter(r => r.status !== 'not-embedded' && r.status !== 'missing').every(r => r.status === 'pass');
+      const isValid = manifestValid && allEmbeddedOk;
+      const tag = TAG_LABELS[manifest.tag] || TAG_LABELS.other;
+      const isExistence = manifest.description === '' && manifest.media.every(m => !m.embedded);
+
+      let html = `
+        <div class="status-badge ${isValid ? 'valid' : 'invalid'} fade-in">
+          <div class="status-icon">${isValid ? '&#x2705;' : '&#x274C;'}</div>
+          <div class="status-text">
+            <h2>${isValid ? 'Archivo verificado' : 'Verificaci\u00f3n fallida'}</h2>
+            <p>${isValid ? 'Integridad confirmada' : 'El archivo ha sido modificado'} &mdash; sellada el ${formatDateShort(manifest.sealedAt)}</p>
+          </div>
+        </div>
+      `;
+
+      if (isExistence) {
+        html += `<div class="card fade-in"><div class="existence-notice"><div class="icon">&#x1F441;</div><h3>Solo verificaci&oacute;n de existencia</h3><p>El contenido est&aacute; oculto. Solo se confirma que la prueba fue creada y sellada.</p></div></div>`;
+      }
+
+      // Evidence Hash integrity
+      html += `<div class="card fade-in">
+        <div class="card-title">Integridad criptogr&aacute;fica</div>
+        <div class="hash-container">
+          <div class="hash-label">Evidence Hash ${manifestValid ? '&#x2705;' : '&#x274C;'}</div>
+          <div class="hash-value">${escapeHtml(manifest.evidenceHash)}</div>
+        </div>
+      </div>`;
+
+      // Media verification
+      if (mediaResults.length > 0) {
+        const passCount = mediaResults.filter(r => r.status === 'pass').length;
+        html += `<div class="card fade-in">
+          <div class="card-title">Verificaci&oacute;n de medios (${passCount}/${mediaResults.length})</div>`;
+        for (const mr of mediaResults) {
+          const icon = mr.status === 'pass' ? '&#x2705;' : mr.status === 'fail' ? '&#x274C;' : mr.status === 'not-embedded' ? '&#x1F4E4;' : '&#x2753;';
+          const statusLabel = mr.status === 'pass' ? 'OK' : mr.status === 'fail' ? 'ALTERADO' : mr.status === 'not-embedded' ? 'No incluido' : 'Falta';
+          const statusClass = mr.status === 'pass' ? 'pass' : mr.status === 'fail' ? 'fail' : 'pending';
+          html += `<div class="media-check">
+            <span class="check-icon">${icon}</span>
+            <span class="check-label">${escapeHtml(mr.id)} (${mr.type})</span>
+            <span class="check-status ${statusClass}">${statusLabel}</span>
+          </div>`;
+          if (mr.status === 'not-embedded') {
+            html += `<button class="verify-extra-btn" onclick="verifyExtraMedia('${escapeHtml(mr.id)}', '${escapeHtml(mr.expected)}')">Verificar archivo por separado &rarr;</button>`;
+          }
+        }
+        html += '</div>';
+      }
+
+      // GPS Map (multi-point)
+      const gpsPoints = [];
+      for (const m of manifest.media) {
+        if (!m.gps) continue;
+        if (m.gps.start) {
+          gpsPoints.push({ lat: m.gps.start.lat, lng: m.gps.start.lng, label: m.id + ' (inicio)' });
+          gpsPoints.push({ lat: m.gps.end.lat, lng: m.gps.end.lng, label: m.id + ' (fin)' });
+        } else if (m.gps.lat != null) {
+          gpsPoints.push({ lat: m.gps.lat, lng: m.gps.lng, label: m.id });
+        }
+      }
+
+      if (gpsPoints.length > 0) {
+        html += `<div class="card fade-in">
+          <div class="card-title">Ubicaci&oacute;n de captura (${gpsPoints.length} puntos)</div>
+          <div id="map" class="map-container"></div>
+          ${manifest.gpsRadius ? `<div class="map-coords">${gpsPoints.length} archivos capturados en un radio de ${Math.round(manifest.gpsRadius)}m</div>` : ''}
+        </div>`;
+      }
+
+      // Details
+      html += `<div class="card fade-in">
+        <div class="card-title">Detalles</div>
+        <div class="info-grid">
+          <div class="info-row"><span class="info-label">Fecha de sellado</span><span class="info-value">${formatDate(manifest.sealedAt)}</span></div>`;
+      if (!isExistence) {
+        html += `
+          <div class="info-row"><span class="info-label">Descripci&oacute;n</span><span class="info-value">${escapeHtml(manifest.description)}</span></div>
+          <div class="info-row"><span class="info-label">Categor&iacute;a</span><span class="info-value"><span class="tag-badge">${tag.icon} ${tag.label}</span></span></div>`;
+      }
+      html += `
+          <div class="info-row"><span class="info-label">Archivos</span><span class="info-value">${manifest.media.length}</span></div>
+          <div class="info-row"><span class="info-label">Dispositivo</span><span class="info-value">${escapeHtml(manifest.device.model)}</span></div>
+          <div class="info-row"><span class="info-label">Versi&oacute;n app</span><span class="info-value mono">${escapeHtml(manifest.device.appVersion)}</span></div>
+        </div>
+      </div>`;
+
+      document.getElementById('verify-result').innerHTML = html;
+
+      // Init multi-point map after DOM is ready
+      if (gpsPoints.length > 0) {
+        setTimeout(() => initMultiMap(gpsPoints, manifest.gpsRadius, manifest.gpsCentroid), 100);
+      }
+    }
+
+    async function verifyExtraMedia(mediaId, expectedHash) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const buffer = await file.arrayBuffer();
+          const hash = 'sha256:' + await sha256Hex(new Uint8Array(buffer));
+          const match = hash === expectedHash;
+          alert(match
+            ? `Archivo verificado: ${mediaId} coincide con el hash del manifiesto.`
+            : `ALERTA: ${mediaId} NO coincide. El archivo ha sido modificado.`
+          );
+        } catch (err) {
+          alert('Error al verificar: ' + err.message);
+        }
+      };
+      input.click();
+    }
+
+    // =========================================================================
+    // Multi-point Map
+    // =========================================================================
+
+    function initMultiMap(points, radius, centroid) {
+      const mapEl = document.getElementById('map');
+      if (!mapEl) return;
+
+      const center = centroid
+        ? [centroid.lat, centroid.lng]
+        : [points[0].lat, points[0].lng];
+
+      const map = L.map(mapEl, { zoomControl: false }).setView(center, 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(map);
+
+      const markers = [];
+      for (const pt of points) {
+        const marker = L.marker([pt.lat, pt.lng]).addTo(map);
+        if (pt.label) marker.bindPopup(pt.label);
+        markers.push(marker);
+      }
+
+      // Draw lines between start/end GPS for video/audio tracks
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        if (a.label && b.label && a.label.replace(' (inicio)', '') === b.label.replace(' (fin)', '')) {
+          L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#6C63FF', weight: 2, dashArray: '5,5' }).addTo(map);
+        }
+      }
+
+      if (radius && centroid) {
+        L.circle([centroid.lat, centroid.lng], {
+          radius: radius,
+          color: '#6C63FF',
+          fillColor: '#6C63FF',
+          fillOpacity: 0.08,
+          weight: 1,
+        }).addTo(map);
+      }
+
+      if (markers.length > 1) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.2));
+      }
+    }
+
+    // =========================================================================
+    // Main — Route to correct mode
     // =========================================================================
 
     async function main() {
       const token = getToken();
-      if (!token) { renderNoToken(); return; }
-      renderLoading();
-      try {
-        const result = await supabaseRpc('verify_share', { p_token: token });
-        if (result && result.error) { renderError(result.error); return; }
-        if (!result || !result.share || !result.proof) { renderError('Respuesta inesperada del servidor.'); return; }
-        renderResult(result);
-      } catch (err) {
-        renderError(err.message || 'Error de conexion. Intenta de nuevo.');
+      const shareKey = getShareKeyFromFragment();
+
+      // Mode 1: Legacy token-based verification (backward compatible)
+      if (token) {
+        renderLoading();
+        try {
+          const result = await supabaseRpc('verify_share', { p_token: token });
+          if (result && result.error) { renderError(result.error); return; }
+          if (!result || !result.share || !result.proof) { renderError('Respuesta inesperada del servidor.'); return; }
+          renderResult(result);
+        } catch (err) {
+          renderError(err.message || 'Error de conexi\u00f3n. Intenta de nuevo.');
+        }
+        return;
       }
+
+      // Mode 2: File-based .proofly verification (new)
+      renderFileMode(shareKey);
     }
 
     main();
