@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proofly - Verificar Prueba</title>
   <meta name="description" content="Verifica la autenticidad e integridad de una prueba digital sellada con Proofly.">
   <meta name="theme-color" content="#0D0D0D">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F6E1;</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F6E1;</text></svg>">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
@@ -30,7 +32,11 @@
       --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     body {
       font-family: var(--font);
@@ -50,102 +56,464 @@
     }
 
     /* Header */
-    .header { text-align: center; padding: 40px 0 20px; }
-    .header-icon { font-size: 48px; margin-bottom: 12px; }
-    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-    .header p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; }
+    .header {
+      text-align: center;
+      padding: 40px 0 20px;
+    }
+
+    .header-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .header p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 6px;
+    }
 
     /* Loading */
-    .loading { display: flex; flex-direction: column; align-items: center; padding: 60px 0; }
-    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading p { color: var(--text-secondary); margin-top: 16px; font-size: 14px; }
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 0;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading p {
+      color: var(--text-secondary);
+      margin-top: 16px;
+      font-size: 14px;
+    }
 
     /* Status Badge */
-    .status-badge { display: flex; align-items: center; gap: 10px; padding: 16px; border-radius: var(--radius); margin-bottom: 20px; }
-    .status-badge.valid { background: var(--success-dim); border: 1px solid rgba(16, 185, 129, 0.25); }
-    .status-badge.invalid { background: var(--error-dim); border: 1px solid rgba(239, 68, 68, 0.25); }
-    .status-icon { font-size: 28px; flex-shrink: 0; }
-    .status-text h2 { font-size: 16px; font-weight: 600; }
-    .status-badge.valid .status-text h2 { color: var(--success); }
-    .status-text p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+
+    .status-badge.valid {
+      background: var(--success-dim);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .status-badge.invalid {
+      background: var(--error-dim);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .status-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .status-text h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .status-badge.valid .status-text h2 {
+      color: var(--success);
+    }
+
+    .status-text p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
 
     /* Mode Pill */
-    .mode-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(108, 99, 255, 0.2); margin-bottom: 20px; }
+    .mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(108, 99, 255, 0.2);
+      margin-bottom: 20px;
+    }
 
     /* Card */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
-    .card-title { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 14px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
 
     /* Photo Gallery */
-    .photo-gallery { margin-bottom: 16px; }
-    .photo-container { position: relative; width: 100%; border-radius: var(--radius); overflow: hidden; background: var(--surface); border: 1px solid var(--border); }
-    .photo-container img { width: 100%; height: auto; display: block; max-height: 400px; object-fit: contain; background: #000; }
-    .photo-nav { display: flex; gap: 8px; margin-top: 10px; justify-content: center; }
-    .photo-thumb { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; border: 2px solid var(--border); cursor: pointer; transition: border-color 0.2s; }
-    .photo-thumb.active { border-color: var(--accent); }
-    .photo-counter { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
-    .description-text { font-size: 14px; color: var(--text); line-height: 1.5; margin-top: 12px; padding: 12px; background: var(--bg); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+    .photo-gallery {
+      margin-bottom: 16px;
+    }
+
+    .photo-container {
+      position: relative;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .photo-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-height: 400px;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .photo-nav {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+
+    .photo-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .photo-thumb.active {
+      border-color: var(--accent);
+    }
+
+    .photo-counter {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .description-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.5;
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
 
     /* Map */
-    .map-container { width: 100%; height: 220px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); margin-bottom: 8px; }
-    .map-coords { font-family: var(--mono); font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+    .map-container {
+      width: 100%;
+      height: 220px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .map-coords {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+    }
 
     /* Hash */
-    .hash-container { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
-    .hash-label { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.5px; margin-bottom: 6px; }
-    .hash-value { font-family: var(--mono); font-size: 12px; color: var(--text); word-break: break-all; line-height: 1.6; user-select: all; }
+    .hash-container {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+    }
+
+    .hash-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .hash-value {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      word-break: break-all;
+      line-height: 1.6;
+      user-select: all;
+    }
 
     /* Info Rows */
-    .info-grid { display: grid; gap: 0; }
-    .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .info-row:last-child { border-bottom: none; }
-    .info-label { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
-    .info-value { font-size: 13px; font-weight: 500; color: var(--text); text-align: right; margin-left: 16px; }
-    .info-value.mono { font-family: var(--mono); font-size: 12px; }
+    .info-grid {
+      display: grid;
+      gap: 0;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .info-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      text-align: right;
+      margin-left: 16px;
+    }
+
+    .info-value.mono {
+      font-family: var(--mono);
+      font-size: 12px;
+    }
 
     /* Badges */
-    .gps-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
-    .gps-badge.accurate { background: var(--success-dim); color: var(--success); }
-    .gps-badge.approximate { background: var(--warning-dim); color: var(--warning); }
-    .gps-badge.unavailable { background: var(--error-dim); color: var(--error); }
-    .gps-badge.private { background: var(--accent-dim); color: var(--accent); }
-    .tag-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; background: var(--surface-hover); color: var(--text); }
+    .gps-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .gps-badge.accurate {
+      background: var(--success-dim);
+      color: var(--success);
+    }
+
+    .gps-badge.approximate {
+      background: var(--warning-dim);
+      color: var(--warning);
+    }
+
+    .gps-badge.unavailable {
+      background: var(--error-dim);
+      color: var(--error);
+    }
+
+    .gps-badge.private {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--surface-hover);
+      color: var(--text);
+    }
 
     /* Existence Only */
-    .existence-notice { text-align: center; padding: 20px; background: var(--accent-dim); border: 1px dashed rgba(108, 99, 255, 0.3); border-radius: var(--radius-sm); margin-bottom: 14px; }
-    .existence-notice .icon { font-size: 32px; margin-bottom: 8px; }
-    .existence-notice h3 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
-    .existence-notice p { font-size: 12px; color: var(--text-secondary); }
+    .existence-notice {
+      text-align: center;
+      padding: 20px;
+      background: var(--accent-dim);
+      border: 1px dashed rgba(108, 99, 255, 0.3);
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+    }
+
+    .existence-notice .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .existence-notice h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .existence-notice p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
 
     /* Error / No Token */
-    .error-container, .no-token { text-align: center; padding: 48px 20px; }
-    .error-container .icon, .no-token .icon { font-size: 48px; margin-bottom: 16px; }
-    .error-container h2, .no-token h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    .error-container p, .no-token p { color: var(--text-secondary); font-size: 14px; line-height: 1.5; max-width: 360px; margin: 0 auto; }
+    .error-container,
+    .no-token {
+      text-align: center;
+      padding: 48px 20px;
+    }
+
+    .error-container .icon,
+    .no-token .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .error-container h2,
+    .no-token h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .error-container p,
+    .no-token p {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 360px;
+      margin: 0 auto;
+    }
 
     /* Footer */
-    .footer { text-align: center; padding: 32px 0; margin-top: auto; }
-    .footer p { font-size: 12px; color: var(--text-secondary); }
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      margin-top: auto;
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
 
     /* Collapsible */
-    .collapsible-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 10px 0; }
-    .collapsible-toggle:hover { color: var(--text); }
-    .collapsible-toggle .arrow { transition: transform 0.2s; font-size: 12px; }
-    .collapsible-toggle.open .arrow { transform: rotate(90deg); }
-    .collapsible-content { display: none; padding-top: 8px; }
-    .collapsible-content.open { display: block; }
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 10px 0;
+    }
+
+    .collapsible-toggle:hover {
+      color: var(--text);
+    }
+
+    .collapsible-toggle .arrow {
+      transition: transform 0.2s;
+      font-size: 12px;
+    }
+
+    .collapsible-toggle.open .arrow {
+      transform: rotate(90deg);
+    }
+
+    .collapsible-content {
+      display: none;
+      padding-top: 8px;
+    }
+
+    .collapsible-content.open {
+      display: block;
+    }
 
     /* Animation */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    .fade-in-delay { animation-delay: 0.15s; opacity: 0; }
-    .fade-in-delay-2 { animation-delay: 0.3s; opacity: 0; }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+
+    .fade-in-delay {
+      animation-delay: 0.15s;
+      opacity: 0;
+    }
+
+    .fade-in-delay-2 {
+      animation-delay: 0.3s;
+      opacity: 0;
+    }
 
     /* Leaflet dark overrides */
-    .leaflet-tile-pane { filter: brightness(0.7) contrast(1.1) saturate(0.8); }
-    .leaflet-control-attribution { background: rgba(0,0,0,0.6) !important; color: #888 !important; font-size: 10px !important; }
-    .leaflet-control-attribution a { color: #aaa !important; }
+    .leaflet-tile-pane {
+      filter: brightness(0.7) contrast(1.1) saturate(0.8);
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(0, 0, 0, 0.6) !important;
+      color: #888 !important;
+      font-size: 10px !important;
+    }
+
+    .leaflet-control-attribution a {
+      color: #aaa !important;
+    }
 
     /* Drag & Drop Zone */
     .drop-zone {
@@ -157,16 +525,34 @@
       transition: all 0.3s ease;
       margin-bottom: 16px;
     }
-    .drop-zone:hover, .drop-zone.drag-over {
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
       border-color: var(--accent);
       background: var(--accent-dim);
     }
-    .drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
-    .drop-zone h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .drop-zone p { font-size: 13px; color: var(--text-secondary); }
+
+    .drop-zone .icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .drop-zone h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
 
     /* Share Key Input */
-    .key-input-container { margin-bottom: 20px; }
+    .key-input-container {
+      margin-bottom: 20px;
+    }
+
     .key-input {
       width: 100%;
       padding: 14px 16px;
@@ -179,8 +565,14 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .key-input:focus { border-color: var(--accent); }
-    .key-input::placeholder { color: var(--text-secondary); }
+
+    .key-input:focus {
+      border-color: var(--accent);
+    }
+
+    .key-input::placeholder {
+      color: var(--text-secondary);
+    }
 
     /* Verify Button */
     .verify-btn {
@@ -196,8 +588,15 @@
       transition: opacity 0.2s;
       margin-bottom: 20px;
     }
-    .verify-btn:hover { opacity: 0.9; }
-    .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .verify-btn:hover {
+      opacity: 0.9;
+    }
+
+    .verify-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
     /* File Info */
     .file-info {
@@ -210,20 +609,68 @@
       border-radius: var(--radius-sm);
       margin-bottom: 16px;
     }
-    .file-info .file-icon { font-size: 20px; }
-    .file-info .file-name { font-size: 13px; font-weight: 500; flex: 1; }
-    .file-info .file-size { font-size: 12px; color: var(--text-secondary); }
-    .file-info .file-remove { cursor: pointer; color: var(--error); font-size: 18px; line-height: 1; }
+
+    .file-info .file-icon {
+      font-size: 20px;
+    }
+
+    .file-info .file-name {
+      font-size: 13px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .file-info .file-size {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .file-info .file-remove {
+      cursor: pointer;
+      color: var(--error);
+      font-size: 18px;
+      line-height: 1;
+    }
 
     /* Media Verification */
-    .media-check { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-    .media-check:last-child { border-bottom: none; }
-    .media-check .check-icon { font-size: 16px; flex-shrink: 0; }
-    .media-check .check-label { font-size: 13px; flex: 1; }
-    .media-check .check-status { font-size: 12px; font-weight: 600; }
-    .media-check .check-status.pass { color: var(--success); }
-    .media-check .check-status.fail { color: var(--error); }
-    .media-check .check-status.pending { color: var(--text-secondary); }
+    .media-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .media-check:last-child {
+      border-bottom: none;
+    }
+
+    .media-check .check-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .media-check .check-label {
+      font-size: 13px;
+      flex: 1;
+    }
+
+    .media-check .check-status {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .media-check .check-status.pass {
+      color: var(--success);
+    }
+
+    .media-check .check-status.fail {
+      color: var(--error);
+    }
+
+    .media-check .check-status.pending {
+      color: var(--text-secondary);
+    }
 
     /* Additional Verify Button */
     .verify-extra-btn {
@@ -236,9 +683,13 @@
       cursor: pointer;
       margin-top: 8px;
     }
-    .verify-extra-btn:hover { border-color: var(--accent); }
+
+    .verify-extra-btn:hover {
+      border-color: var(--accent);
+    }
   </style>
 </head>
+
 <body>
 
   <div class="container">
@@ -260,14 +711,25 @@
     // =========================================================================
     // Configuration
     // =========================================================================
-    const SUPABASE_URL = 'https://ctwvjxwckghhypcdxspq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0d3ZqeHdja2doaHlwY2R4c3BxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NTgyMzMsImV4cCI6MjA4NzEzNDIzM30.VXg8eQLjybiMdzzmRRIYnPYHNZuUcnyYQA0xa90bFOM';
+    const PROOFLY_CONFIG = window.PROOFLY_CONFIG || {
+      supabaseUrl: '__SUPABASE_URL__',
+      supabaseAnonKey: '__SUPABASE_ANON_KEY__',
+    };
+    const SUPABASE_URL = PROOFLY_CONFIG.supabaseUrl === '__SUPABASE_URL__' ? '' : PROOFLY_CONFIG.supabaseUrl;
+    const SUPABASE_ANON_KEY = PROOFLY_CONFIG.supabaseAnonKey === '__SUPABASE_ANON_KEY__' ? '' : PROOFLY_CONFIG.supabaseAnonKey;
+    const IV_SIZE = 16;
+    const MAC_SIZE = 32;
+    const MAC_PURPOSE_PREFIX = 'proofly:mac:';
 
     // =========================================================================
     // Helpers
     // =========================================================================
 
     async function supabaseRpc(fnName, params) {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('La verificación por token no está configurada en este deploy de GitHub Pages. Usa el enlace con #key y sube el archivo .proofly.');
+      }
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
         method: 'POST',
         headers: {
@@ -289,10 +751,12 @@
     }
 
     function getShareKeyFromFragment() {
-      const hash = window.location.hash;
-      if (!hash) return null;
-      const match = hash.match(/key=([a-fA-F0-9]+)/);
-      return match ? match[1] : null;
+      const fragment = window.location.hash.startsWith('#')
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      if (!fragment) return null;
+      const params = new URLSearchParams(fragment);
+      return params.get('key');
     }
 
     function formatBytes(bytes) {
@@ -310,6 +774,170 @@
       }
       const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
       return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function sortedReplacer(_key, value) {
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        return Object.keys(value).sort().reduce((sorted, key) => {
+          sorted[key] = value[key];
+          return sorted;
+        }, {});
+      }
+      return value;
+    }
+
+    function normalizeShareKey(rawValue) {
+      const trimmed = (rawValue || '').trim();
+      if (!trimmed) return null;
+
+      const directMatch = trimmed.match(/^[a-fA-F0-9]{64}$/);
+      if (directMatch) {
+        return directMatch[0].toLowerCase();
+      }
+
+      const urlMatch = trimmed.match(/[?#&]key=([a-fA-F0-9]{64})/);
+      return urlMatch ? urlMatch[1].toLowerCase() : null;
+    }
+
+    function hexToBytes(hex) {
+      const normalized = hex.trim();
+      if (normalized.length % 2 !== 0) {
+        throw new Error('Clave hexadecimal inválida');
+      }
+
+      const bytes = new Uint8Array(normalized.length / 2);
+      for (let i = 0; i < normalized.length; i += 2) {
+        bytes[i / 2] = parseInt(normalized.slice(i, i + 2), 16);
+      }
+      return bytes;
+    }
+
+    function bytesToHex(bytes) {
+      return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    function concatBytes(...arrays) {
+      const totalLength = arrays.reduce((sum, current) => sum + current.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+
+      for (const current of arrays) {
+        result.set(current, offset);
+        offset += current.length;
+      }
+
+      return result;
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let index = 0; index < bytes.length; index += chunkSize) {
+        const chunk = bytes.subarray(index, index + chunkSize);
+        binary += String.fromCharCode(...chunk);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToBytes(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    function constantTimeEqual(a, b) {
+      const maxLen = Math.max(a.length, b.length);
+      let mismatch = a.length ^ b.length;
+
+      for (let index = 0; index < maxLen; index += 1) {
+        const charA = index < a.length ? a.charCodeAt(index) : 0;
+        const charB = index < b.length ? b.charCodeAt(index) : 0;
+        mismatch |= charA ^ charB;
+      }
+
+      return mismatch === 0;
+    }
+
+    async function hmacSha256Hex(keyHex, data) {
+      const key = await crypto.subtle.importKey(
+        'raw',
+        hexToBytes(keyHex),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const payload = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+      const signature = await crypto.subtle.sign('HMAC', key, payload);
+      return bytesToHex(new Uint8Array(signature));
+    }
+
+    async function deriveArchiveMacKey(shareKey, proofId) {
+      return hmacSha256Hex(shareKey, `${MAC_PURPOSE_PREFIX}${proofId}`);
+    }
+
+    async function decryptArchiveMedia(encryptedBase64, shareKey, proofId) {
+      const combined = base64ToBytes(encryptedBase64.trim());
+      if (combined.length <= IV_SIZE + MAC_SIZE) {
+        throw new Error('Payload embebido inválido');
+      }
+
+      const iv = combined.slice(0, IV_SIZE);
+      const mac = combined.slice(combined.length - MAC_SIZE);
+      const ciphertext = combined.slice(IV_SIZE, combined.length - MAC_SIZE);
+      const macKey = await deriveArchiveMacKey(shareKey, proofId);
+      const expectedMac = await hmacSha256Hex(macKey, concatBytes(iv, ciphertext));
+      const actualMac = bytesToHex(mac);
+
+      if (!constantTimeEqual(expectedMac, actualMac)) {
+        throw new Error('La firma MAC del archivo embebido no coincide');
+      }
+
+      const aesKey = await crypto.subtle.importKey(
+        'raw',
+        hexToBytes(shareKey),
+        { name: 'AES-CBC' },
+        false,
+        ['decrypt']
+      );
+
+      const plaintext = await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, aesKey, ciphertext);
+      return new Uint8Array(plaintext);
+    }
+
+    async function computeManifestEvidenceHash(manifest) {
+      const mediaHashes = manifest.media.map((entry) =>
+        entry.hash.startsWith('sha256:') ? entry.hash.slice(7) : entry.hash
+      );
+
+      const canonical = {
+        appVersion: manifest.device.appVersion,
+        description: manifest.description,
+        deviceModel: manifest.device.model,
+        gpsCentroid: manifest.gpsCentroid
+          ? { lat: manifest.gpsCentroid.lat, lng: manifest.gpsCentroid.lng }
+          : null,
+        gpsRadius: manifest.gpsRadius ?? null,
+        mediaHashes: [...mediaHashes].sort(),
+        proofId: manifest.proofId,
+        sealedAt: manifest.sealedAt,
+        tag: manifest.tag,
+      };
+
+      return `sha256:${await sha256Hex(JSON.stringify(canonical, sortedReplacer))}`;
+    }
+
+    async function computeManifestSignature(manifest, shareKey) {
+      return `hmac-sha256:${await hmacSha256Hex(shareKey, manifest.evidenceHash)}`;
+    }
+
+    function mediaMimeType(type) {
+      if (type === 'photo') return 'image/jpeg';
+      if (type === 'video') return 'video/mp4';
+      return 'audio/mp4';
     }
 
     const app = document.getElementById('app');
@@ -533,6 +1161,14 @@
     // =========================================================================
 
     let selectedFile = null;
+    let previewObjectUrls = [];
+
+    function clearPreviewObjectUrls() {
+      for (const url of previewObjectUrls) {
+        URL.revokeObjectURL(url);
+      }
+      previewObjectUrls = [];
+    }
 
     function renderFileMode(shareKey) {
       let html = `
@@ -547,6 +1183,7 @@
           <div class="key-input-container">
             <input type="text" class="key-input" id="key-input" value="${shareKey ? escapeHtml(shareKey) : ''}" placeholder="Pega la clave de acceso (hex o enlace proofly://)..." />
           </div>
+          ${shareKey ? '<p style="font-size:12px;color:var(--text-secondary);margin:-8px 0 16px;">La clave se carg&oacute; desde el enlace. Solo falta subir el archivo .proofly.</p>' : ''}
           <button class="verify-btn" id="verify-btn" disabled onclick="handleVerifyFile()">Verificar archivo</button>
           <div id="verify-result"></div>
         </div>
@@ -577,6 +1214,7 @@
         alert('Por favor selecciona un archivo .proofly');
         return;
       }
+      clearPreviewObjectUrls();
       selectedFile = file;
       document.getElementById('file-info-container').innerHTML = `
         <div class="file-info">
@@ -590,6 +1228,7 @@
     }
 
     function removeFile() {
+      clearPreviewObjectUrls();
       selectedFile = null;
       document.getElementById('file-info-container').innerHTML = '';
       document.getElementById('verify-result').innerHTML = '';
@@ -608,19 +1247,19 @@
       if (!selectedFile) return;
 
       const keyInput = document.getElementById('key-input');
-      const shareKeyRaw = keyInput.value.trim();
+      const key = normalizeShareKey(keyInput.value);
 
-      // Extract hex key from deep link format if pasted (proofly://open?key=hex or #key=hex)
-      let key = shareKeyRaw;
-      const keyMatch = shareKeyRaw.match(/key=([a-fA-F0-9]+)/);
-      if (keyMatch) key = keyMatch[1];
-
-      if (!key) { alert('Ingresa la clave de acceso'); return; }
+      if (!key) {
+        alert('Ingresa una clave de acceso válida de 64 caracteres hex o un enlace de Proofly.');
+        return;
+      }
 
       const resultDiv = document.getElementById('verify-result');
       resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analizando archivo...</p></div>';
 
       try {
+        clearPreviewObjectUrls();
+
         // 1. Read file as ArrayBuffer
         const arrayBuffer = await selectedFile.arrayBuffer();
 
@@ -636,45 +1275,58 @@
 
         if (manifest.version !== '1.0') throw new Error('Versi\u00f3n de .proofly no soportada: ' + manifest.version);
 
-        // 4. Verify evidence hash (SHA-256 over sorted canonical JSON)
-        const hashable = {
-          createdAt: manifest.createdAt,
-          description: manifest.description,
-          device: manifest.device,
-          gpsCentroid: manifest.gpsCentroid,
-          gpsRadius: manifest.gpsRadius,
-          media: manifest.media,
-          proofId: manifest.proofId,
-          sealedAt: manifest.sealedAt,
-          tag: manifest.tag,
-          version: manifest.version,
-        };
+        // 4. Verify evidence hash and signature using the same rules as the app
+        const computedHash = await computeManifestEvidenceHash(manifest);
+        const manifestValid = constantTimeEqual(computedHash, manifest.evidenceHash);
+        const computedSignature = await computeManifestSignature(
+          { ...manifest, evidenceHash: computedHash },
+          key,
+        );
+        const signatureValid = constantTimeEqual(computedSignature, manifest.signature);
 
-        function sortedStringify(obj) {
-          if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
-          if (Array.isArray(obj)) return '[' + obj.map(sortedStringify).join(',') + ']';
-          const keys = Object.keys(obj).sort();
-          return '{' + keys.map(k => JSON.stringify(k) + ':' + sortedStringify(obj[k])).join(',') + '}';
-        }
-
-        const canonical = sortedStringify(hashable);
-        const computedHash = 'sha256:' + await sha256Hex(canonical);
-        const manifestValid = computedHash === manifest.evidenceHash;
-
-        // 5. Verify each embedded media file hash
+        // 5. Verify each media file using decrypted plaintext for embedded payloads
         const mediaResults = [];
+        const previewMedia = [];
+
         for (const entry of manifest.media) {
           if (entry.embedded) {
             const zipFileName = 'media/' + entry.id + '.enc';
             const mediaFile = zip.file(zipFileName);
+
             if (mediaFile) {
-              const mediaData = await mediaFile.async('uint8array');
-              const mediaHash = 'sha256:' + await sha256Hex(mediaData);
-              mediaResults.push({
-                id: entry.id, type: entry.type,
-                expected: entry.hash, actual: mediaHash,
-                status: mediaHash === entry.hash ? 'pass' : 'fail',
-              });
+              try {
+                const encryptedPayload = await mediaFile.async('string');
+                const plaintextBytes = await decryptArchiveMedia(encryptedPayload, key, manifest.proofId);
+                const plaintextBase64 = bytesToBase64(plaintextBytes);
+                const mediaHash = 'sha256:' + await sha256Hex(plaintextBase64);
+                const verified = constantTimeEqual(mediaHash, entry.hash);
+
+                mediaResults.push({
+                  id: entry.id,
+                  type: entry.type,
+                  expected: entry.hash,
+                  actual: mediaHash,
+                  status: verified ? 'pass' : 'fail',
+                });
+
+                const url = URL.createObjectURL(new Blob([plaintextBytes], { type: mediaMimeType(entry.type) }));
+                previewObjectUrls.push(url);
+                previewMedia.push({
+                  id: entry.id,
+                  type: entry.type,
+                  url,
+                  capturedAt: entry.capturedAt,
+                  verified,
+                });
+              } catch (_error) {
+                mediaResults.push({
+                  id: entry.id,
+                  type: entry.type,
+                  expected: entry.hash,
+                  actual: null,
+                  status: 'fail',
+                });
+              }
             } else {
               mediaResults.push({ id: entry.id, type: entry.type, expected: entry.hash, actual: null, status: 'missing' });
             }
@@ -684,25 +1336,106 @@
         }
 
         // 6. Render result
-        renderFileVerificationResult(manifest, manifestValid, mediaResults);
+        renderFileVerificationResult(manifest, {
+          manifestValid,
+          signatureValid,
+          computedHash,
+          computedSignature,
+          mediaResults,
+          previewMedia,
+        });
 
       } catch (err) {
         resultDiv.innerHTML = `<div class="error-container fade-in"><div class="icon">&#x26A0;</div><h2>Error de verificaci&oacute;n</h2><p>${escapeHtml(err.message)}</p></div>`;
       }
     }
 
-    function renderFileVerificationResult(manifest, manifestValid, mediaResults) {
-      const allEmbeddedOk = mediaResults.filter(r => r.status !== 'not-embedded' && r.status !== 'missing').every(r => r.status === 'pass');
-      const isValid = manifestValid && allEmbeddedOk;
+    function renderEmbeddedMedia(previewMedia, manifest, isExistence) {
+      if (!previewMedia.length || isExistence) {
+        return '';
+      }
+
+      const photos = previewMedia.filter((item) => item.type === 'photo' && item.verified);
+      const videos = previewMedia.filter((item) => item.type === 'video' && item.verified);
+      const audios = previewMedia.filter((item) => item.type === 'audio' && item.verified);
+      let html = '';
+
+      if (photos.length) {
+        html += `<div class="card fade-in photo-gallery">
+          <div class="card-title">Evidencia embebida</div>
+          <div class="photo-container">
+            <img id="main-photo" src="${escapeHtml(photos[0].url)}" alt="Evidencia fotografica" />
+            ${photos.length > 1 ? `<span class="photo-counter">1 / ${photos.length}</span>` : ''}
+          </div>`;
+
+        if (photos.length > 1) {
+          html += '<div class="photo-nav">';
+          photos.forEach((photo, index) => {
+            html += `<img class="photo-thumb ${index === 0 ? 'active' : ''}" src="${escapeHtml(photo.url)}" onclick="selectPhoto(${index})" alt="Foto ${index + 1}" />`;
+          });
+          html += '</div>';
+        }
+
+        if (manifest.description) {
+          html += `<div class="description-text">${escapeHtml(manifest.description)}</div>`;
+        }
+
+        html += '</div>';
+      } else if (manifest.description) {
+        html += `<div class="card fade-in">
+          <div class="card-title">Descripci&oacute;n</div>
+          <div class="description-text">${escapeHtml(manifest.description)}</div>
+        </div>`;
+      }
+
+      if (videos.length) {
+        html += `<div class="card fade-in">
+          <div class="card-title">Videos embebidos</div>`;
+
+        videos.forEach((video) => {
+          html += `<div style="margin-bottom:16px;">
+            <video controls preload="metadata" style="width:100%;border-radius:12px;background:#000;" src="${escapeHtml(video.url)}"></video>
+            <div class="map-coords" style="margin-top:8px;">${escapeHtml(video.id)} &mdash; ${formatDateShort(video.capturedAt)}</div>
+          </div>`;
+        });
+
+        html += '</div>';
+      }
+
+      if (audios.length) {
+        html += `<div class="card fade-in">
+          <div class="card-title">Audios embebidos</div>`;
+
+        audios.forEach((audio) => {
+          html += `<div style="margin-bottom:14px;">
+            <audio controls preload="metadata" style="width:100%;" src="${escapeHtml(audio.url)}"></audio>
+            <div class="map-coords" style="margin-top:8px;">${escapeHtml(audio.id)} &mdash; ${formatDateShort(audio.capturedAt)}</div>
+          </div>`;
+        });
+
+        html += '</div>';
+      }
+
+      window._photos = photos;
+      return html;
+    }
+
+    function renderFileVerificationResult(manifest, verification) {
+      const { manifestValid, signatureValid, computedHash, computedSignature, mediaResults, previewMedia } = verification;
+      const allEmbeddedOk = mediaResults
+        .filter((result) => result.status !== 'not-embedded' && result.status !== 'missing')
+        .every((result) => result.status === 'pass');
+      const isValid = manifestValid && signatureValid && allEmbeddedOk;
       const tag = TAG_LABELS[manifest.tag] || TAG_LABELS.other;
       const isExistence = manifest.description === '' && manifest.media.every(m => !m.embedded);
+      const notEmbeddedCount = mediaResults.filter((result) => result.status === 'not-embedded').length;
 
       let html = `
         <div class="status-badge ${isValid ? 'valid' : 'invalid'} fade-in">
           <div class="status-icon">${isValid ? '&#x2705;' : '&#x274C;'}</div>
           <div class="status-text">
             <h2>${isValid ? 'Archivo verificado' : 'Verificaci\u00f3n fallida'}</h2>
-            <p>${isValid ? 'Integridad confirmada' : 'El archivo ha sido modificado'} &mdash; sellada el ${formatDateShort(manifest.sealedAt)}</p>
+            <p>${isValid ? 'Integridad confirmada para el manifiesto y los archivos embebidos' : 'El manifiesto, la firma o un archivo embebido no coinciden'} &mdash; sellada el ${formatDateShort(manifest.sealedAt)}</p>
           </div>
         </div>
       `;
@@ -711,6 +1444,8 @@
         html += `<div class="card fade-in"><div class="existence-notice"><div class="icon">&#x1F441;</div><h3>Solo verificaci&oacute;n de existencia</h3><p>El contenido est&aacute; oculto. Solo se confirma que la prueba fue creada y sellada.</p></div></div>`;
       }
 
+      html += renderEmbeddedMedia(previewMedia, manifest, isExistence);
+
       // Evidence Hash integrity
       html += `<div class="card fade-in">
         <div class="card-title">Integridad criptogr&aacute;fica</div>
@@ -718,6 +1453,12 @@
           <div class="hash-label">Evidence Hash ${manifestValid ? '&#x2705;' : '&#x274C;'}</div>
           <div class="hash-value">${escapeHtml(manifest.evidenceHash)}</div>
         </div>
+        <div class="map-coords" style="margin-top:10px;">Recalculado: ${escapeHtml(computedHash)}</div>
+        <div class="hash-container" style="margin-top:12px;">
+          <div class="hash-label">Firma HMAC ${signatureValid ? '&#x2705;' : '&#x274C;'}</div>
+          <div class="hash-value">${escapeHtml(manifest.signature)}</div>
+        </div>
+        <div class="map-coords" style="margin-top:10px;">Recalculada: ${escapeHtml(computedSignature)}</div>
       </div>`;
 
       // Media verification
@@ -738,6 +1479,13 @@
             html += `<button class="verify-extra-btn" onclick="verifyExtraMedia('${escapeHtml(mr.id)}', '${escapeHtml(mr.expected)}')">Verificar archivo por separado &rarr;</button>`;
           }
         }
+
+        if (notEmbeddedCount > 0) {
+          html += `<p style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-top:12px;">
+            ${notEmbeddedCount} archivo(s) no iban embebidos en el .proofly. Su hash sigue en el manifiesto, pero debes validarlos aparte con el bot&oacute;n correspondiente.
+          </p>`;
+        }
+
         html += '</div>';
       }
 
@@ -794,7 +1542,7 @@
         if (!file) return;
         try {
           const buffer = await file.arrayBuffer();
-          const hash = 'sha256:' + await sha256Hex(new Uint8Array(buffer));
+          const hash = 'sha256:' + await sha256Hex(bytesToBase64(new Uint8Array(buffer)));
           const match = hash === expectedHash;
           alert(match
             ? `Archivo verificado: ${mediaId} coincide con el hash del manifiesto.`
@@ -886,4 +1634,5 @@
     main();
   </script>
 </body>
+
 </html>

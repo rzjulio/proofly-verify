@@ -1,0 +1,65 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Smoke test
+        run: node tests/smoke.mjs
+
+      - name: Build static artifact
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL != '' && vars.SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY != '' && vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const root = process.cwd();
+          const sourcePath = path.join(root, 'index.html');
+          const outputRoot = path.join(root, 'dist');
+          const outputV = path.join(outputRoot, 'v');
+
+          fs.rmSync(outputRoot, { recursive: true, force: true });
+          fs.mkdirSync(outputV, { recursive: true });
+
+          const source = fs.readFileSync(sourcePath, 'utf8');
+          const replaced = source
+            .replace(/__SUPABASE_URL__/g, process.env.SUPABASE_URL || '')
+            .replace(/__SUPABASE_ANON_KEY__/g, process.env.SUPABASE_ANON_KEY || '');
+
+          fs.writeFileSync(path.join(outputRoot, 'index.html'), replaced);
+          fs.writeFileSync(path.join(outputV, 'index.html'), replaced);
+          fs.writeFileSync(path.join(outputRoot, '.nojekyll'), '');
+          NODE
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
