@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repoRoot = '/Volumes/Datos/Repos/proofly-verify';
+const currentFilePath = fileURLToPath(import.meta.url);
+const repoRoot = path.resolve(path.dirname(currentFilePath), '..');
 const htmlPath = path.join(repoRoot, 'index.html');
 const html = fs.readFileSync(htmlPath, 'utf8');
 
