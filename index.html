@@ -43,6 +43,7 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -51,7 +52,7 @@
     .container {
       width: 100%;
       max-width: 520px;
-      padding: 20px;
+      padding: clamp(16px, 4vw, 20px);
       margin: 0 auto;
     }
 
@@ -76,6 +77,7 @@
       color: var(--text-secondary);
       font-size: 14px;
       margin-top: 6px;
+      line-height: 1.5;
     }
 
     /* Loading */
@@ -132,9 +134,14 @@
       flex-shrink: 0;
     }
 
+    .status-text {
+      min-width: 0;
+    }
+
     .status-text h2 {
       font-size: 16px;
       font-weight: 600;
+      overflow-wrap: anywhere;
     }
 
     .status-badge.valid .status-text h2 {
@@ -145,12 +152,15 @@
       font-size: 13px;
       color: var(--text-secondary);
       margin-top: 2px;
+      overflow-wrap: anywhere;
     }
 
     /* Mode Pill */
     .mode-pill {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 6px;
       padding: 6px 14px;
       border-radius: 20px;
@@ -160,6 +170,8 @@
       color: var(--accent);
       border: 1px solid rgba(108, 99, 255, 0.2);
       margin-bottom: 20px;
+      max-width: 100%;
+      text-align: center;
     }
 
     /* Card */
@@ -205,6 +217,7 @@
 
     .photo-nav {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin-top: 10px;
       justify-content: center;
@@ -262,6 +275,9 @@
       font-size: 12px;
       color: var(--text-secondary);
       margin-top: 6px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     /* Hash */
@@ -299,6 +315,8 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
       padding: 12px 0;
       border-bottom: 1px solid var(--border);
     }
@@ -310,7 +328,8 @@
     .info-label {
       font-size: 13px;
       color: var(--text-secondary);
-      flex-shrink: 0;
+      flex: 1 1 120px;
+      min-width: 0;
     }
 
     .info-value {
@@ -318,7 +337,11 @@
       font-weight: 500;
       color: var(--text);
       text-align: right;
-      margin-left: 16px;
+      margin-left: auto;
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .info-value.mono {
@@ -442,6 +465,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       width: 100%;
       background: none;
       border: none;
@@ -455,9 +479,16 @@
       color: var(--text);
     }
 
+    .collapsible-toggle span:first-child {
+      min-width: 0;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
     .collapsible-toggle .arrow {
       transition: transform 0.2s;
       font-size: 12px;
+      flex-shrink: 0;
     }
 
     .collapsible-toggle.open .arrow {
@@ -602,6 +633,7 @@
     .file-info {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
       padding: 12px;
       background: var(--surface);
@@ -617,12 +649,17 @@
     .file-info .file-name {
       font-size: 13px;
       font-weight: 500;
-      flex: 1;
+      flex: 1 1 180px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .file-info .file-size {
       font-size: 12px;
       color: var(--text-secondary);
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .file-info .file-remove {
@@ -630,12 +667,14 @@
       color: var(--error);
       font-size: 18px;
       line-height: 1;
+      flex-shrink: 0;
     }
 
     /* Media Verification */
     .media-check {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 8px;
       padding: 10px 0;
       border-bottom: 1px solid var(--border);
@@ -652,12 +691,17 @@
 
     .media-check .check-label {
       font-size: 13px;
-      flex: 1;
+      flex: 1 1 180px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .media-check .check-status {
       font-size: 12px;
       font-weight: 600;
+      margin-left: auto;
+      flex-shrink: 0;
     }
 
     .media-check .check-status.pass {
@@ -682,10 +726,64 @@
       font-size: 12px;
       cursor: pointer;
       margin-top: 8px;
+      max-width: 100%;
+      white-space: normal;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     .verify-extra-btn:hover {
       border-color: var(--accent);
+    }
+
+    @media (max-width: 560px) {
+      .header {
+        padding: 28px 0 16px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .status-badge {
+        align-items: flex-start;
+        padding: 14px;
+      }
+
+      .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .info-value {
+        width: 100%;
+        margin-left: 0;
+        text-align: left;
+      }
+
+      .media-check {
+        align-items: flex-start;
+        gap: 4px 8px;
+      }
+
+      .media-check .check-status {
+        width: 100%;
+        margin-left: 24px;
+      }
+
+      .verify-extra-btn {
+        width: 100%;
+      }
+
+      .photo-thumb {
+        width: 48px;
+        height: 48px;
+      }
+
+      .map-container {
+        height: 200px;
+      }
     }
   </style>
 </head>
